@@ -2,7 +2,10 @@ module EAD
 
   def self.series(hierarchy)
     if hierarchy['did'][0]['unitid']
-      directory = hierarchy['did'][0]['unitid'][0].gsub(/\s/,"_")
+      array = hierarchy['did'][0]['unitid'][0].split(' ')
+      level = array[0].gsub('Series','s').gsub('Sub-','s')
+      number = array[1].rjust(3,'0')
+      directory = level + number
     else
       directory = 'series'
     end
