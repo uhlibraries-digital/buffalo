@@ -18,11 +18,8 @@ dmwg: 'M:\Software\dmwg'
 map: 'M:\Software\bcdams-map'
 items:
 ```
-
-`dmwg:` points to the location of your local [dmwg](https://github.com/uhlibraries-digital/dmwg) repository clone.
-
-`map:` points to the location of your local [bcdams-map](https://github.com/uhlibraries-digital/bcdams-map) repository clone.
-
-`items:` identifies the CDM numbers for a collection subset in the following format: `[363,350,358]`. This must be left blank (shown in the Example Config) if the report should include all items in a collection.
+- `dmwg:` points to the location of your local [dmwg](https://github.com/uhlibraries-digital/dmwg) repository clone.
+- `map:` points to the location of your local [bcdams-map](https://github.com/uhlibraries-digital/bcdams-map) repository clone.
+- `items:` identifies the CDM numbers for a collection subset in the following format: `[363,350,358]`. This must be left blank (shown in the Example Config) if the report should include all items in a collection.
 
 After running this script, push the changes to the BCDAMS-MAP repository. Results will be immediately available here: https://uhlibraries-digital.github.io/bcdams-map/migration/
