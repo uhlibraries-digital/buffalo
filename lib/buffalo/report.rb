@@ -1,13 +1,56 @@
 module Report
 
-  def self.carpenters(path, collection, elements, project = {type: "standard", items: "all"})
+  def self.carpenters(collection, elements, project)
     time = Time.now
-    report = "#{path}\\#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}.carp"
+    report = "#{project[:path]}\\#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}.carp"
 
-    if project[:type] == "standard"
-      # standard project code
+    if project[:archival] == 'false'
+      Buffalo.write(report, "{\"type\":\"standard\","\
+                            "\"aic\":\"#{collection.alias}\","\
+                            "\"collectionArkUrl\":\"#{project[:collection_uri]}\","\
+                            "\"collectionTitle\":\"\","\
+                            "\"objects\":[")
+      if project[:items].nil?
+        collection.hunt
+      else
+        collection.hunt(project[:items])
+      end
+      @object_size = collection.objects.size
+      @object_count = 0
+      puts "Writing #{collection.alias} Carpenters File..."
+      collection.objects.each do |pointer, object|
+        @object_count += 1
+        Buffalo.append(report, "{\"uuid\":\"#{SecureRandom.uuid}\","\
+                               "\"level\":\"item\","\
+                               "\"dates\":[],"\
+                               "\"containers\":[{\"type_1\":\"Item\","\
+                                                "\"indicator_1\":#{@object_count}}],"\
+                               "\"files\":[],"\
+                               "\"productionNotes\":\"\","\
+                               "\"do_ark\":\"\","\
+                               "\"pm_ark\":\"\","\
+                               "\"title\":\"#{object.metadata['Title']}\","\
+                               "\"metadata\": {")
+        metadata = CDM.metadata(object, elements)
+        @metadata_size = metadata.size
+        @metadata_count = 0
+        metadata.each do |k,v|
+          elements.each do |element|
+            if element.name == k
+              @namespace = element.namespace
+            end
+          end
+          @metadata_count += 1
+          Buffalo.append(report, "\"#{@namespace}.#{k}\":#{CDM.values_string(v,';').to_json}")
+          Buffalo.append(report, ",") unless @metadata_count == @metadata_size
+        end
+        Buffalo.append(report, "}}")
+        Buffalo.append(report, ",") unless @object_count == @object_size
+      end
+      Buffalo.append(report, "]}")
+
     else
-      aspace = ASpace.new(project[:base_url], project[:user], project[:password])
+      aspace = ASpace.new(project[:aspace][:base_url], project[:aspace][:user], project[:aspace][:password])
       Buffalo.write(report, "{\"type\":\"findingaid\","\
                             "\"resource\":\"#{project[:resource_uri]}\","\
                             "\"collectionTitle\":\"\","\

@@ -3,7 +3,10 @@ module Buffalo
   # Configuration defaults
   @config = { :dmwg => 'path/to/dmwg',
               :map => 'path/to/bcdams-map',
-              :items => []}
+              :aspace => { :endpoint => 'uri', :username => 'username', :password => 'password'},
+              :items => [],
+              :archival => 'true or false',
+              :collection_uri => 'cedar ark or aspace resource uri'}
 
   @valid_config_keys = @config.keys
 
