@@ -42,6 +42,6 @@ else
   elements = Crosswalk.elements("#{DMWG}/#{COLLECTION}/#{CROSSWALK}.yml", bcdams)
   uhdl = Repository.scout([COLLECTION])
   uhdl.collections.each do |c_alias, collection|
-    Report.carpenters(collection, elements, { path: "#{DMWG}/#{COLLECTION}", items: ITEMS, archival: ARCHIVAL, collection_uri: COLLECTION_URI })
+    Report.carpenters(collection, elements, { path: "#{DMWG}/#{COLLECTION}", items: ITEMS, aspace: ASPACE, archival: ARCHIVAL, collection_uri: COLLECTION_URI })
   end
 end
