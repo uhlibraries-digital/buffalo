@@ -50,8 +50,6 @@ module Report
       Buffalo.append(report, "]}")
 
     else
-      puts project
-
       aspace = ASpace.new(project[:aspace]['endpoint'], project[:aspace]['username'], project[:aspace]['password'])
       Buffalo.write(report, "{\"type\":\"findingaid\","\
                             "\"resource\":\"#{project[:collection_uri]}\","\
