@@ -67,7 +67,7 @@ module Report
       puts "Writing #{collection.alias} Carpenters File..."
       collection.objects.each do |pointer, object|
         @object_count += 1
-        aspace_object = aspace.get_object(object.metadata['ArchivesSpace Identifier'])
+        aspace_object = aspace.get_object(object.metadata['ArchivesSpace URI'])
 
         Buffalo.append(report, "{\"uuid\":\"#{SecureRandom.uuid}\",")
         level = aspace_object['level']
@@ -80,7 +80,7 @@ module Report
                                                   "\"indicator_2\":null,"\
                                                   "\"type_3\":null,"\
                                                   "\"indicator_3\":null}],"\
-                                 "\"uri\":\"#{object.metadata['ArchivesSpace Identifier']}\",")
+                                 "\"uri\":\"#{object.metadata['ArchivesSpace URI']}\",")
         else
           @artificial_count += 1
           Buffalo.append(report, "\"title\":\"#{aspace_object['title']}\","\
@@ -91,7 +91,7 @@ module Report
                                                   "\"indicator_2\":null,"\
                                                   "\"type_3\":null,"\
                                                   "\"indicator_3\":null}],"\
-                                 "\"parent_uri\":\"#{object.metadata['ArchivesSpace Identifier']}\","\
+                                 "\"parent_uri\":\"#{object.metadata['ArchivesSpace URI']}\","\
                                  "\"artificial\":true,")
         end
         Buffalo.append(report,  "\"files\":[],"\
