@@ -51,9 +51,10 @@ module Report
 
     else
       aspace = ASpace.new(project[:aspace]['endpoint'], project[:aspace]['username'], project[:aspace]['password'])
+      resource = aspace.get_object(project[:collection_uri])
       Buffalo.write(report, "{\"type\":\"findingaid\","\
-                            "\"resource\":\"#{project[:collection_uri]}\","\
-                            "\"collectionTitle\":\"\","\
+                            "\"resource\":\"#{resource['uri']}\","\
+                            "\"collectionTitle\":\"#{resource['title']}\","\
                             "\"aic\":\"\","\
                             "\"objects\":[")
       if project[:items].nil?
@@ -68,19 +69,39 @@ module Report
       collection.objects.each do |pointer, object|
         @object_count += 1
         aspace_object = aspace.get_object(object.metadata['ArchivesSpace URI'])
-
+        begin
+          sub_container = aspace_object['instances'][0]['sub_container']
+        rescue
+          puts "sub_container Error: " + pointer.to_s
+          puts aspace_object
+          next
+        end
+        begin
+          container = aspace.get_object(sub_container['top_container']['ref'])
+        rescue
+          puts "container Error: " + pointer.to_s
+          puts aspace_object
+          next
+        end
         Buffalo.append(report, "{\"uuid\":\"#{SecureRandom.uuid}\",")
         level = aspace_object['level']
+        dates = []
         if level == 'item'
-          Buffalo.append(report, "\"title\":\"\","\
-                                 "\"dates\":[],"\
-                                 "\"containers\":[{\"type_1\":null,"\
-                                                  "\"indicator_1\":null,"\
-                                                  "\"type_2\":null,"\
-                                                  "\"indicator_2\":null,"\
-                                                  "\"type_3\":null,"\
-                                                  "\"indicator_3\":null}],"\
-                                 "\"uri\":\"#{object.metadata['ArchivesSpace URI']}\",")
+          if aspace_object['dates'].nil?
+            continue
+          else
+            aspace_object['dates'].each {|date| dates << date['expression']}
+          end
+          Buffalo.append(report, "\"title\":\"#{aspace_object['title']}\","\
+                                 "\"dates\":#{dates},"\
+                                 "\"containers\":[{\"top_container\": {\"ref\":\"#{container['uri']}\"},"\
+                                                  "\"type_1\":\"#{container['type']}\","\
+                                                  "\"indicator_1\":\"#{container['indicator']}\","\
+                                                  "\"type_2\":\"#{sub_container['type_2']}\","\
+                                                  "\"indicator_2\":\"#{sub_container['indicator_2']}\","\
+                                                  "\"type_3\":\"#{sub_container['type_3']}\","\
+                                                  "\"indicator_3\":\"#{sub_container['indicator_3']}\"}],"\
+                                 "\"uri\":\"#{aspace_object['uri']}\",")
         else
           @artificial_count += 1
           Buffalo.append(report, "\"title\":\"#{aspace_object['title']}\","\
@@ -118,58 +139,7 @@ module Report
     end
   end
 
-  def self.migrator(path, collection, elements, cdm_domain)
-    report = "#{path}\\#{collection.name}.csv"
-    url = "http://#{cdm_domain}/collection/#{collection.alias}/item"
-
-    collection.hunt
-    puts "Writing #{collection.name} CDM-Migrator Report..."
-    CSV.open("#{report}", "wb") do |csv|
-      csv << ['Object URL', 'Item URL', 'File Name']
-      collection.objects.each do |pointer, object|
-        csv << ["#{url}/#{pointer}", '', "#{object.metadata['File Name']}"]
-        if object.type == 'compound'
-          object_pointer = pointer
-          object.items.each do |pointer, object|
-            csv << ['', "#{url}/#{object_pointer}/show/#{pointer}", "#{object.metadata['File Name']}"]
-          end
-        end
-      end
-    end
-  end
-
-  def self.metadata_analysis(path, collection, elements, cdm_domain)
-    report = "#{path}\\#{collection.name}.csv"
-    url = "http://#{cdm_domain}/collection/#{collection.alias}/item"
-
-    collection.hunt
-    puts "Writing #{collection.name} Metadata Analysis..."
-    CSV.open("#{report}", "wb") do |csv|
-      csv << Report.analysis_header(elements)
-
-      collection.objects.each do |pointer, object|
-        row = ["#{url}/#{pointer}", '']
-        metadata = CDM.metadata(object, elements)
-        metadata.each do |element, values|
-          row << CDM.values_string(values, ';')
-        end
-        csv << row
-        if object.type == 'compound'
-          object_pointer = pointer
-          object.items.each do |pointer, object|
-            row = ['', "#{url}/#{object_pointer}/show/#{pointer}"]
-            metadata = CDM.metadata(object, elements)
-            metadata.each do |element, values|
-              row << CDM.values_string(values, ';')
-            end
-            csv << row
-          end
-        end
-      end
-    end
-  end
-
-  def self.migration(collection, elements, project = {path: "", cdm_domain: "", items: []})
+  def self.migration_report(collection, elements, project = {path: "", cdm_domain: "", items: []})
     time = Time.now
     filename = "#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}"
     report = "#{project[:path]}/#{filename}.md"
@@ -253,6 +223,14 @@ module Report
     filename
   end
 
+  def self.markdown_header(elements, path)
+    Buffalo.append(path, "<tr>\n")
+    Buffalo.append(path, "<th>Object</th>\n")
+    Buffalo.append(path, "<th>File</th>\n")
+    elements.each { |element| Buffalo.append(path, "<th>#{element.label}</th>\n") }
+    Buffalo.append(path, "</tr>\n")
+  end
+
   def self.element_list( collection, elements, project = {path:'', items:[]} )
     match_query = RDF::Query.new({
       :match => { RDF::URI("http://sindice.com/vocab/search#totalResults") => :result }
@@ -308,20 +286,6 @@ module Report
         end
       end
     end
-  end
-
-  def self.analysis_header(elements)
-    header = ['Object', 'File']
-    elements.each { |element| header << element.label }
-    header
-  end
-
-  def self.markdown_header(elements, path)
-    Buffalo.append(path, "<tr>\n")
-    Buffalo.append(path, "<th>Object</th>\n")
-    Buffalo.append(path, "<th>File</th>\n")
-    elements.each { |element| Buffalo.append(path, "<th>#{element.label}</th>\n") }
-    Buffalo.append(path, "</tr>\n")
   end
 
 end
