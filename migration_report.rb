@@ -39,7 +39,7 @@ else
   elements = Crosswalk.elements("#{DMWG}/#{COLLECTION}/#{CROSSWALK}.yml", bcdams)
   uhdl = Repository.scout([COLLECTION])
   uhdl.collections.each do |c_alias, collection|
-    filename = Report.migration(collection, elements, { path: "#{MAP}/migration", cdm_domain: "digital.lib.uh.edu", items: ITEMS })
-    Buffalo.append("#{MAP}/_data/migration.yml", "\n- label: #{filename}\n  file: #{filename}\n")
+    filename = Report.migration_report(collection, elements, { path: "#{MAP}/migration", cdm_domain: "digital.lib.uh.edu", items: ITEMS })
+    Buffalo.append("#{MAP}/_data/migration.yml", "\n- label: \'#{filename}\'\n  file: \'#{filename}\'\n")
   end
 end
