@@ -3,21 +3,20 @@ module Report
   def self.carpenters(collection, elements, project)
     time = Time.now
     report = "#{project[:path]}\\#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}.carp"
+    if project[:items].nil? then collection.hunt else collection.hunt(project[:items]) end
 
-    if project[:archival] == 'false'
+    if project[:archival] == 'true'
+      puts "Writing #{collection.alias} Carpenters File..."
+      Buffalo.write(report, Carp.archival(collection, elements, project).to_json)
+    else # standard project
+      @object_size = collection.objects.size
+      @object_count = 0
+      puts "Writing #{collection.alias} Carpenters File..."
       Buffalo.write(report, "{\"type\":\"standard\","\
                             "\"aic\":\"#{collection.alias}\","\
                             "\"collectionArkUrl\":\"#{project[:collection_uri]}\","\
                             "\"collectionTitle\":\"\","\
                             "\"objects\":[")
-      if project[:items].nil?
-        collection.hunt
-      else
-        collection.hunt(project[:items])
-      end
-      @object_size = collection.objects.size
-      @object_count = 0
-      puts "Writing #{collection.alias} Carpenters File..."
       collection.objects.each do |pointer, object|
         @object_count += 1
         Buffalo.append(report, "{\"uuid\":\"#{SecureRandom.uuid}\","\
@@ -31,94 +30,6 @@ module Report
                                "\"pm_ark\":\"\","\
                                "\"title\":\"#{object.metadata['Title']}\","\
                                "\"metadata\": {")
-        metadata = CDM.metadata(object, elements)
-        @metadata_size = metadata.size
-        @metadata_count = 0
-        metadata.each do |k,v|
-          elements.each do |element|
-            if element.name == k
-              @namespace = element.namespace
-            end
-          end
-          @metadata_count += 1
-          Buffalo.append(report, "\"#{@namespace}.#{k}\":#{CDM.values_string(v,';').to_json}")
-          Buffalo.append(report, ",") unless @metadata_count == @metadata_size
-        end
-        Buffalo.append(report, "}}")
-        Buffalo.append(report, ",") unless @object_count == @object_size
-      end
-      Buffalo.append(report, "]}")
-
-    else
-      aspace = ASpace.new(project[:aspace]['endpoint'], project[:aspace]['username'], project[:aspace]['password'])
-      resource = aspace.get_object(project[:collection_uri])
-      Buffalo.write(report, "{\"type\":\"findingaid\","\
-                            "\"resource\":\"#{resource['uri']}\","\
-                            "\"collectionTitle\":\"#{resource['title']}\","\
-                            "\"aic\":\"\","\
-                            "\"objects\":[")
-      if project[:items].nil?
-        collection.hunt
-      else
-        collection.hunt(project[:items])
-      end
-      @object_size = collection.objects.size
-      @object_count = 0
-      @artificial_count = 0
-      puts "Writing #{collection.alias} Carpenters File..."
-      collection.objects.each do |pointer, object|
-        @object_count += 1
-        aspace_object = aspace.get_object(object.metadata['ArchivesSpace URI'])
-        begin
-          sub_container = aspace_object['instances'][0]['sub_container']
-        rescue
-          puts "sub_container Error: " + pointer.to_s
-          puts aspace_object
-          next
-        end
-        begin
-          container = aspace.get_object(sub_container['top_container']['ref'])
-        rescue
-          puts "container Error: " + pointer.to_s
-          puts aspace_object
-          next
-        end
-        Buffalo.append(report, "{\"uuid\":\"#{SecureRandom.uuid}\",")
-        level = aspace_object['level']
-        dates = []
-        if level == 'item'
-          if aspace_object['dates'].nil?
-            continue
-          else
-            aspace_object['dates'].each {|date| dates << date['expression']}
-          end
-          Buffalo.append(report, "\"title\":\"#{aspace_object['title']}\","\
-                                 "\"dates\":#{dates},"\
-                                 "\"containers\":[{\"top_container\": {\"ref\":\"#{container['uri']}\"},"\
-                                                  "\"type_1\":\"#{container['type']}\","\
-                                                  "\"indicator_1\":\"#{container['indicator']}\","\
-                                                  "\"type_2\":\"#{sub_container['type_2']}\","\
-                                                  "\"indicator_2\":\"#{sub_container['indicator_2']}\","\
-                                                  "\"type_3\":\"#{sub_container['type_3']}\","\
-                                                  "\"indicator_3\":\"#{sub_container['indicator_3']}\"}],"\
-                                 "\"uri\":\"#{aspace_object['uri']}\",")
-        else
-          @artificial_count += 1
-          Buffalo.append(report, "\"title\":\"#{aspace_object['title']}\","\
-                                 "\"dates\":[],"\
-                                 "\"containers\":[{\"type_1\":\"Item\","\
-                                                  "\"indicator_1\":#{@artificial_count},"\
-                                                  "\"type_2\":null,"\
-                                                  "\"indicator_2\":null,"\
-                                                  "\"type_3\":null,"\
-                                                  "\"indicator_3\":null}],"\
-                                 "\"parent_uri\":\"#{object.metadata['ArchivesSpace URI']}\","\
-                                 "\"artificial\":true,")
-        end
-        Buffalo.append(report,  "\"files\":[],"\
-                                "\"productionNotes\":\"\","\
-                                "\"do_ark\":\"\","\
-                                "\"metadata\": {")
         metadata = CDM.metadata(object, elements)
         @metadata_size = metadata.size
         @metadata_count = 0
@@ -179,17 +90,7 @@ module Report
             Buffalo.append(report, "</td>\n")
           end
         elsif values.count == 1
-          # if values[0].include? 'public domain'
-          #   Buffalo.append(report, "<td>Public Domain</td>\n")
-          # elsif values[0].include? 'Educational use'
-          #   Buffalo.append(report, "<td>Educational Use</td>\n")
-          # elsif values[0].include? 'item is protected by copyright'
-          #   Buffalo.append(report, "<td>In Copyright</td>\n")
-          # elsif values[0].include? 'item may be protected by copyright'
-          #   Buffalo.append(report, "<td>Rights Undertermined</td>\n")
-          # else
-            Buffalo.append(report, "<td>#{values[0]}</td>\n")
-          # end
+          Buffalo.append(report, "<td>#{values[0]}</td>\n")
         else
           Buffalo.append(report, "<td style=\"background-color: #e6e6e6\"></td>\n")
         end
