@@ -14,21 +14,21 @@ module CDM
           CDM.push_values(values, CDM.get_values(object.metadata[field]))
           if object.type == 'compound'
             object.items.each do |pointer, object|
-              CDM.push_values(values, CDM.get_values(object.metadata[field]))              
+              CDM.push_values(values, CDM.get_values(object.metadata[field]))
             end
           end
         when 'unique'
           CDM.push_unique_values(values, CDM.get_values(object.metadata[field]))
           if object.type == 'compound'
             object.items.each do |pointer, object|
-              CDM.push_unique_values(values, CDM.get_values(object.metadata[field]))              
+              CDM.push_unique_values(values, CDM.get_values(object.metadata[field]))
             end
           end
         when 'element_report'
           CDM.push_element_report_values(values, CDM.get_values(object.metadata[field]), field)
           if object.type == 'compound'
             object.items.each do |pointer, object|
-              CDM.push_element_report_values(values, CDM.get_values(object.metadata[field]), field)              
+              CDM.push_element_report_values(values, CDM.get_values(object.metadata[field]), field)
             end
           end
         else
