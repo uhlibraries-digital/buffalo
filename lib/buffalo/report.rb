@@ -2,51 +2,14 @@ module Report
 
   def self.carpenters(collection, elements, project)
     time = Time.now
-    report = "#{project[:path]}\\#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}.carp"
+    file_path = "#{project[:path]}\\#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}.carp"
     if project[:items].nil? then collection.hunt else collection.hunt(project[:items]) end
 
+    puts "Writing #{collection.alias} Carpenters File..."
     if project[:archival] == 'true'
-      puts "Writing #{collection.alias} Carpenters File..."
-      Buffalo.write(report, Carp.archival(collection, elements, project).to_json)
-    else # standard project
-      @object_size = collection.objects.size
-      @object_count = 0
-      puts "Writing #{collection.alias} Carpenters File..."
-      Buffalo.write(report, "{\"type\":\"standard\","\
-                            "\"aic\":\"#{collection.alias}\","\
-                            "\"collectionArkUrl\":\"#{project[:collection_uri]}\","\
-                            "\"collectionTitle\":\"\","\
-                            "\"objects\":[")
-      collection.objects.each do |pointer, object|
-        @object_count += 1
-        Buffalo.append(report, "{\"uuid\":\"#{SecureRandom.uuid}\","\
-                               "\"level\":\"item\","\
-                               "\"dates\":[],"\
-                               "\"containers\":[{\"type_1\":\"Item\","\
-                                                "\"indicator_1\":#{@object_count}}],"\
-                               "\"files\":[],"\
-                               "\"productionNotes\":\"\","\
-                               "\"do_ark\":\"\","\
-                               "\"pm_ark\":\"\","\
-                               "\"title\":\"#{object.metadata['Title']}\","\
-                               "\"metadata\": {")
-        metadata = CDM.metadata(object, elements)
-        @metadata_size = metadata.size
-        @metadata_count = 0
-        metadata.each do |k,v|
-          elements.each do |element|
-            if element.name == k
-              @namespace = element.namespace
-            end
-          end
-          @metadata_count += 1
-          Buffalo.append(report, "\"#{@namespace}.#{k}\":#{CDM.values_string(v,';').to_json}")
-          Buffalo.append(report, ",") unless @metadata_count == @metadata_size
-        end
-        Buffalo.append(report, "}}")
-        Buffalo.append(report, ",") unless @object_count == @object_size
-      end
-      Buffalo.append(report, "]}")
+      Buffalo.write(file_path, Carp.archival(collection, elements, project).to_json)
+    else
+      Buffalo.write(file_path, Carp.standard(collection, elements, project).to_json)
     end
   end
 
