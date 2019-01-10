@@ -21,78 +21,100 @@ module Report
     thumbnail = "http://#{project[:cdm_domain]}/contentdm/image/thumbnail/#{collection.alias}"
     @count = 0
 
-    Buffalo.write(report, "---\nlayout: template1\ntitle: #{collection.alias}\ncomments: false\n---\n\n\# #{collection.name}\n_#{filename}_\n\n")
-    Buffalo.append(report, "<table>\n")
-    Report.markdown_header(elements, report)
-
     if project[:items].nil?
       collection.hunt
     else
       collection.hunt(project[:items])
     end
-    puts "Writing '#{collection.alias}' Migration Report..."
 
-    collection.objects.each do |pointer, object|
-      @count += 1
-      if @count % 5 == 0
-        Report.markdown_header(elements, report)
-      end
-      Buffalo.append(report, "<tr>\n")
-      Buffalo.append(report, "<td><a href=\"#{url}/#{pointer}\"><img src=\"#{thumbnail}/#{pointer}\" alt=\"#{collection.alias}/#{pointer} thumbnail\" /></a></td>\n")
-      Buffalo.append(report, "<td>#{object.metadata['File Name']}</td>\n")
-      metadata = CDM.metadata(object, elements, 'unique')
-      metadata.each do |element, values|
-        if values.count > 1
-          if element == 'title'
-            Buffalo.append(report, "<td>#{values[0]}</td>\n")
-          else
-            Buffalo.append(report, "<td>\n")
-            Buffalo.append(report, "<ul>\n")
-            values.each {|value| Buffalo.append(report, "<li>#{value}</li>\n")}
-            Buffalo.append(report, "</ul>\n")
-            Buffalo.append(report, "</td>\n")
-          end
-        elsif values.count == 1
-          Buffalo.append(report, "<td>#{values[0]}</td>\n")
-        else
-          Buffalo.append(report, "<td style=\"background-color: #e6e6e6\"></td>\n")
+    puts "Writing '#{collection.alias}' Migration Report... "
+    Buffalo.write(report, "---\nlayout: template1"\
+                          "\ntitle: #{collection.alias}"\
+                          "\ncomments: false"\
+                          "\n---\n\n\# #{collection.name}"\
+                          "\n_#{filename}_\n\n")
+
+    markdown = Builder::XmlMarkup.new(:indent => 2)
+    markdown.table {
+      markdown.tr {
+        markdown.th('Object')
+        markdown.th('File')
+        elements.each { |element| markdown.th(element.label) }
+      }
+      collection.objects.each do |pointer, object|
+        @count += 1
+        if @count % 5 == 0
+          markdown.tr {
+            markdown.th('Object')
+            markdown.th('File')
+            elements.each { |element| markdown.th(element.label) }
+          }
         end
-      end
-      Buffalo.append(report, "</tr>\n")
-      if object.type == 'compound'
-        object_pointer = pointer
-        object.items.each do |pointer, object|
-          Buffalo.append(report, "<tr>\n")
-          Buffalo.append(report, "<td>#{object.metadata['File Name']}</td>\n")
-          Buffalo.append(report, "<td><a href=\"#{url}/#{object_pointer}/show/#{pointer}\"><img src=\"#{thumbnail}/#{pointer}\" alt=\"#{collection.alias}/#{pointer} thumbnail\" /></a></td>\n")
-          metadata = CDM.metadata(object, elements)
+        markdown.tr {
+          markdown.td {
+            markdown.a(:href => "#{url}/#{pointer}") {
+              markdown.img(
+                :src => "#{thumbnail}/#{pointer}",
+                :alt => "#{collection.alias}/#{pointer} thumbnail"
+              )
+            }
+          }
+          markdown.td(object.metadata['File Name'])
+          metadata = CDM.metadata(object, elements, 'unique')
           metadata.each do |element, values|
             if values.count > 1
-              Buffalo.append(report, "<td>\n")
-              Buffalo.append(report, "<ul>\n")
-              values.each {|value| Buffalo.append(report, "<li>#{value}</li>\n")}
-              Buffalo.append(report, "</ul>\n")
-              Buffalo.append(report, "</td>\n")
+              if element == 'title'
+                markdown.td(values[0])
+              else
+                markdown.td {
+                  markdown.ul {
+                    values.each { |value| markdown.li(value) }
+                  }
+                }
+              end
             elsif values.count == 1
-              Buffalo.append(report, "<td>#{values[0]}</td>\n")
+              markdown.td(values[0])
             else
-              Buffalo.append(report, "<td style=\"background-color: #e6e6e6\"></td>\n")
+              markdown.td(:style => "background-color: \#e6e6e6")
             end
           end
-          Buffalo.append(report, "</tr>\n")
-        end
+          if object.type == 'compound'
+            object_pointer = pointer
+            object.items.each do |pointer, object|
+              markdown.tr {
+                markdown.td(object.metadata['File Name'])
+                markdown.td {
+                  markdown.a(:href => "#{url}/#{object_pointer}/show/#{pointer}") {
+                    markdown.img(
+                      :src => "#{thumbnail}/#{pointer}",
+                      :alt => "#{collection.alias}/#{pointer} thumbnail"
+                    )
+                  }
+                }
+                metadata = CDM.metadata(object, elements)
+                metadata.each do |element, values|
+                  if values.count > 1
+                    markdown.td {
+                      markdown.ul {
+                        values.each { |value| markdown.li(value) }
+                      }
+                    }
+                  elsif values.count == 1
+                    markdown.td(values[0])
+                  else
+                    markdown.td(:style => "background-color: \#e6e6e6")
+                  end
+                end
+              }
+            end
+          end
+        }
       end
-    end
-    Buffalo.append(report, "<table>\n")
+    }
+    markdown.br()
+    markdown.br()
+    Buffalo.append(report, markdown)
     filename
-  end
-
-  def self.markdown_header(elements, path)
-    Buffalo.append(path, "<tr>\n")
-    Buffalo.append(path, "<th>Object</th>\n")
-    Buffalo.append(path, "<th>File</th>\n")
-    elements.each { |element| Buffalo.append(path, "<th>#{element.label}</th>\n") }
-    Buffalo.append(path, "</tr>\n")
   end
 
   def self.element_list( collection, elements, project = {path:'', items:[]} )
