@@ -35,7 +35,7 @@ else
   puts 'Loading Crosswalk...'
   elements = Crosswalk.elements("#{DMWG}/#{COLLECTION}/#{CROSSWALK}.yml", bcdams)
   uhdl = Repository.scout([COLLECTION])
-  uhdl.collections[c_alias].objects.each do |c_alias, collection|
+  uhdl.collections.objects.each do |c_alias, collection|
     filename = Report.migration_report(
       collection,
       elements,
