@@ -29,6 +29,7 @@ else
   DMWG = Buffalo.config[:dmwg]
   MAP = Buffalo.config[:map]
   ITEMS = Buffalo.config[:items]
+  ITEM_LEVEL = Buffalo.config[:item_level]
   puts ''
   puts 'Loading MAP...'
   bcdams = Map.new(JSON.parse(open('https://vocab.lib.uh.edu/bcdams-map/api/elements.json').read))
@@ -41,7 +42,8 @@ else
       elements,
       { path: "#{MAP}/migration",
         cdm_domain: "digital.lib.uh.edu",
-        items: ITEMS
+        items: ITEMS,
+        item_level: ITEM_LEVEL
       }
     )
     Buffalo.append(

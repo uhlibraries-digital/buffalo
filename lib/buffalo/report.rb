@@ -13,7 +13,7 @@ module Report
     end
   end
 
-  def self.migration_report(collection, elements, project = {path: "", cdm_domain: "", items: []})
+  def self.migration_report(collection, elements, project = {path: "", cdm_domain: "", items: [], item_level: true})
     time = Time.now
     filename = "#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}"
     report = "#{project[:path]}/#{filename}.md"
@@ -78,7 +78,7 @@ module Report
               markdown.td(:style => "background-color: \#e6e6e6")
             end
           end
-          if object.type == 'compound'
+          if object.type == 'compound' && project[:item_level] == 'true'
             object_pointer = pointer
             object.items.each do |pointer, object|
               markdown.tr {
