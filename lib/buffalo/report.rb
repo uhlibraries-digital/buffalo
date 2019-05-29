@@ -13,7 +13,7 @@ module Report
     end
   end
 
-  def self.migration_report(collection, elements, project = {path: "", cdm_domain: "", items: [], item_level: true})
+  def self.migration_report(collection, elements, project = {path: "", cdm_domain: "", items: nil, item_level: true})
     time = Time.now
     filename = "#{collection.alias}_#{time.strftime('%Y%m%d_%H%M')}"
     report = "#{project[:path]}/#{filename}.md"
@@ -117,7 +117,7 @@ module Report
     filename
   end
 
-  def self.element_list( collection, elements, project = {path:'', items:[]} )
+  def self.element_list( collection, elements, project = {path: '', items: nil} )
     match_query = RDF::Query.new({
       :match => { RDF::URI("http://sindice.com/vocab/search#totalResults") => :result }
     })
