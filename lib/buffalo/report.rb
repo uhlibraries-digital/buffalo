@@ -35,21 +35,23 @@ module Report
                           "\n_#{filename}_\n\n")
 
     markdown = Builder::XmlMarkup.new(:indent => 2)
-    markdown.table {
-      markdown.tr {
-        markdown.th('Object')
-        markdown.th('File')
-        elements.each { |element| markdown.th(element.label) }
+    markdown.table ( "class"=>"floating-header" ) {
+      markdown.thead {
+        markdown.tr {
+          markdown.th('Object')
+          markdown.th('File')
+          elements.each { |element| markdown.th(element.label) }
+        }
       }
       collection.objects.each do |pointer, object|
-        @count += 1
-        if @count % 5 == 0
-          markdown.tr {
-            markdown.th('Object')
-            markdown.th('File')
-            elements.each { |element| markdown.th(element.label) }
-          }
-        end
+        # @count += 1
+        # if @count % 5 == 0
+        #   markdown.tr {
+        #     markdown.th('Object')
+        #     markdown.th('File')
+        #     elements.each { |element| markdown.th(element.label) }
+        #   }
+        # end
         markdown.tr {
           markdown.td {
             markdown.a(:href => "#{url}/#{pointer}") {
