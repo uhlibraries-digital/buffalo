@@ -35,81 +35,77 @@ module Report
                           "\n_#{filename}_\n\n")
 
     markdown = Builder::XmlMarkup.new(:indent => 2)
-    markdown.table {
-      markdown.tr {
-        markdown.th('Object')
-        markdown.th('File')
-        elements.each { |element| markdown.th(element.label) }
-      }
-      collection.objects.each do |pointer, object|
-        @count += 1
-        if @count % 5 == 0
-          markdown.tr {
-            markdown.th('Object')
-            markdown.th('File')
-            elements.each { |element| markdown.th(element.label) }
-          }
-        end
-        markdown.tr {
-          markdown.td {
-            markdown.a(:href => "#{url}/#{pointer}") {
-              markdown.img(
-                :src => "#{thumbnail}/#{pointer}",
-                :alt => "#{collection.alias}/#{pointer} thumbnail"
-              )
-            }
-          }
-          markdown.td(object.metadata['File Name'])
-          metadata = CDM.metadata(object, elements, 'unique')
-          metadata.each do |element, values|
-            if values.count > 1
-              if element == 'title'
-                markdown.td(values[0])
-              else
-                markdown.td {
-                  markdown.ul {
-                    values.each { |value| markdown.li(value) }
-                  }
-                }
-              end
-            elsif values.count == 1
-              markdown.td(values[0])
-            else
-              markdown.td(:style => "background-color: \#e6e6e6")
-            end
-          end
-          if object.type == 'compound' && project[:item_level] == 'true'
-            object_pointer = pointer
-            object.items.each do |pointer, object|
-              markdown.tr {
-                markdown.td(object.metadata['File Name'])
-                markdown.td {
-                  markdown.a(:href => "#{url}/#{object_pointer}/show/#{pointer}") {
-                    markdown.img(
-                      :src => "#{thumbnail}/#{pointer}",
-                      :alt => "#{collection.alias}/#{pointer} thumbnail"
-                    )
-                  }
-                }
-                metadata = CDM.metadata(object, elements)
-                metadata.each do |element, values|
-                  if values.count > 1
-                    markdown.td {
-                      markdown.ul {
-                        values.each { |value| markdown.li(value) }
-                      }
-                    }
-                  elsif values.count == 1
-                    markdown.td(values[0])
-                  else
-                    markdown.td(:style => "background-color: \#e6e6e6")
-                  end
-                end
-              }
-            end
-          end
-        }
-      end
+    markdown.table(:class=>"floating-header") {
+			markdown.thead {
+	      markdown.tr {
+	        markdown.th('Object')
+	        markdown.th('File')
+	        elements.each { |element| markdown.th(element.label) }
+	      }
+			}
+			markdown.tbody {
+	      collection.objects.each do |pointer, object|
+	        markdown.tr {
+	          markdown.td {
+	            markdown.a(:href=>"#{url}/#{pointer}") {
+	              markdown.img(
+	                :src => "#{thumbnail}/#{pointer}",
+	                :alt => "#{collection.alias}/#{pointer} thumbnail"
+	              )
+	            }
+	          }
+	          markdown.td(object.metadata['File Name'])
+	          metadata = CDM.metadata(object, elements, 'unique')
+	          metadata.each do |element, values|
+	            if values.count > 1
+	              if element == 'title'
+	                markdown.td(values[0])
+	              else
+	                markdown.td {
+	                  markdown.ul {
+	                    values.each { |value| markdown.li(value) }
+	                  }
+	                }
+	              end
+	            elsif values.count == 1
+	              markdown.td(values[0])
+	            else
+	              markdown.td(:style => "background-color: \#e6e6e6")
+	            end
+	          end
+	          if object.type == 'compound' && project[:item_level] == 'true'
+	            object_pointer = pointer
+	            object.items.each do |pointer, object|
+	              markdown.tr {
+	                markdown.td(object.metadata['File Name'])
+	                markdown.td {
+	                  markdown.a(:href => "#{url}/#{object_pointer}/show/#{pointer}") {
+	                    markdown.img(
+	                      :src => "#{thumbnail}/#{pointer}",
+	                      :alt => "#{collection.alias}/#{pointer} thumbnail"
+	                    )
+	                  }
+	                }
+	                metadata = CDM.metadata(object, elements)
+	                metadata.each do |element, values|
+	                  if values.count > 1
+	                    markdown.td {
+	                      markdown.ul {
+	                        values.each { |value| markdown.li(value) }
+	                      }
+	                    }
+	                  elsif values.count == 1
+	                    markdown.td(values[0])
+	                  else
+	                    markdown.td(:style => "background-color: \#e6e6e6")
+	                  end
+	                end
+	              }
+	            end
+	          end
+	        }
+	      end
+			}
     }
     markdown.br()
     markdown.br()
